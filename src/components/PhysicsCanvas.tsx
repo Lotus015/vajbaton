@@ -11,12 +11,14 @@ interface PhysicsCanvasProps {
     string,
     { x: number; y: number; angle: number }
   >) => void;
+  onPieceSnapped?: (pieceId: string) => void;
 }
 
 export default function PhysicsCanvas({
   pieces,
   breakMode,
   onUpdate,
+  onPieceSnapped,
 }: PhysicsCanvasProps) {
   const sceneRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine>();
@@ -78,7 +80,25 @@ export default function PhysicsCanvas({
       60,
       { isStatic: true, render: { visible: false } }
     );
-    Matter.World.add(world, ground);
+    
+    // Add left and right walls
+    const leftWall = Matter.Bodies.rectangle(
+      -30,
+      window.innerHeight / 2,
+      60,
+      window.innerHeight,
+      { isStatic: true, render: { visible: false } }
+    );
+    
+    const rightWall = Matter.Bodies.rectangle(
+      window.innerWidth + 30,
+      window.innerHeight / 2,
+      60,
+      window.innerHeight,
+      { isStatic: true, render: { visible: false } }
+    );
+    
+    Matter.World.add(world, [ground, leftWall, rightWall]);
 
     pieces.forEach((p) => {
       const centerX = p.x + p.w / 2;
@@ -132,14 +152,13 @@ export default function PhysicsCanvas({
     bodiesRef.current = newBodies;
 
     // 5) Listen for mouse events to handle snap-back
-    Matter.Events.on(mouseConstraint, 'enddrag', (event) => {
-      const body = event.body;
-      if (!body || !body.label.startsWith('box-')) return;
+    const snapPieceBack = (body: Matter.Body) => {
+      if (!body || !body.label.startsWith('box-')) return false;
       
       const pieceId = body.label.replace('box-', '');
       const originalPos = originalPositionsRef.current[pieceId];
       
-      if (!originalPos) return;
+      if (!originalPos) return false;
       
       // Check if close to original position (within 80px)
       const distance = Math.sqrt(
@@ -189,9 +208,74 @@ export default function PhysicsCanvas({
 
           constraintsRef.current[pieceId] = [topLeftPin, topRightPin, bottomPin];
           Matter.World.add(engine.world, [topLeftPin, topRightPin, bottomPin]);
+          
+          if (onPieceSnapped) {
+            onPieceSnapped(pieceId);
+          }
+        }
+        return true;
+      }
+      return false;
+    };
+
+    Matter.Events.on(mouseConstraint, 'enddrag', (event) => {
+      snapPieceBack(event.body);
+    });
+
+    // Add spacebar listener for manual snap-back
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        const draggedBody = mouseConstraint.body;
+        if (draggedBody && draggedBody.label.startsWith('box-')) {
+          // Pin the piece at its current position
+          const pieceId = draggedBody.label.replace('box-', '');
+          const piece = pieces.find(p => p.id === pieceId);
+          
+          if (piece) {
+            // Stop the body's movement
+            Matter.Body.setVelocity(draggedBody, { x: 0, y: 0 });
+            Matter.Body.setAngularVelocity(draggedBody, 0);
+            
+            // Create new constraints at current position
+            const currentX = draggedBody.position.x;
+            const currentY = draggedBody.position.y;
+            
+            const topLeftPin = Matter.Constraint.create({
+              bodyA: draggedBody,
+              pointA: { x: -piece.w/3, y: -piece.h/3 },
+              pointB: { x: currentX - piece.w/3, y: currentY - piece.h/3 },
+              stiffness: 1,
+              length: 0,
+              render: { visible: false },
+            });
+
+            const topRightPin = Matter.Constraint.create({
+              bodyA: draggedBody,
+              pointA: { x: piece.w/3, y: -piece.h/3 },
+              pointB: { x: currentX + piece.w/3, y: currentY - piece.h/3 },
+              stiffness: 1,
+              length: 0,
+              render: { visible: false },
+            });
+
+            const bottomPin = Matter.Constraint.create({
+              bodyA: draggedBody,
+              pointA: { x: 0, y: 0 },
+              pointB: { x: currentX, y: currentY },
+              stiffness: 1,
+              length: 0,
+              render: { visible: false },
+            });
+
+            constraintsRef.current[pieceId] = [topLeftPin, topRightPin, bottomPin];
+            Matter.World.add(engine.world, [topLeftPin, topRightPin, bottomPin]);
+          }
         }
       }
-    });
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
 
     // 6) Sync positions after each update
     Matter.Events.on(engine, 'afterUpdate', () => {
@@ -220,6 +304,7 @@ export default function PhysicsCanvas({
       if (mouseElement.parentNode) {
         mouseElement.parentNode.removeChild(mouseElement);
       }
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
