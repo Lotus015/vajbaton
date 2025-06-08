@@ -8,9 +8,9 @@ import TutorialPopup from '@/components/TutorialPopup';
 import CompletionModal from '@/components/CompletionModal';
 import Level1Newsletter from '@/components/levels/Level1';
 import Level2FeatureSection from '@/components/levels/Level2';
+import Level3NavbarHeroFooter from '@/components/levels/Level3';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/Button';
-import { tutorialPieces, level1Pieces, level2Pieces } from '@/types';
+import { tutorialPieces, level1Pieces, level2Pieces, level3Pieces } from '@/types';
 import useGameStore from '@/store/gameStore';
 
 type TutorialStep = 'welcome' | 'drag' | 'spacebar' | 'complete' | 'finished';
@@ -47,6 +47,7 @@ export default function HomePage() {
       case 0: return tutorialPieces;
       case 1: return level1Pieces;
       case 2: return level2Pieces;
+      case 3: return level3Pieces;
       default: return tutorialPieces;
     }
   };
@@ -137,6 +138,9 @@ export default function HomePage() {
     } else if (currentLevel === 1) {
       // Move from Level 1 to Level 2
       setLevel(2);
+    } else if (currentLevel === 2) {
+      // Move from Level 2 to Level 3
+      setLevel(3);
     } else {
       // For now, just reset current level
       resetLevel();
@@ -192,6 +196,7 @@ export default function HomePage() {
       case 0: return 'Tutorial Level';
       case 1: return 'Level 1';
       case 2: return 'Level 2';
+      case 3: return 'Level 3';
       default: return `Level ${currentLevel}`;
     }
   };
@@ -201,6 +206,7 @@ export default function HomePage() {
       case 0: return 'Build Something Vibeable';
       case 1: return 'Newsletter Card';
       case 2: return 'Feature Section';
+      case 3: return 'Navbar + Hero + Footer';
       default: return 'Challenge';
     }
   };
@@ -321,6 +327,8 @@ export default function HomePage() {
         <Level1Newsletter positions={positions} />
       ) : currentLevel === 2 ? (
         <Level2FeatureSection positions={positions} />
+      ) : currentLevel === 3 ? (
+        <Level3NavbarHeroFooter positions={positions} />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-neon-cyan text-2xl">Level {currentLevel} - Coming Soon!</div>

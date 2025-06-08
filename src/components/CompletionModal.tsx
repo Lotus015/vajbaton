@@ -3,12 +3,97 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState } from 'react';
+import useGameStore from '@/store/gameStore';
 
 interface CompletionModalProps {
   onNextLevel: () => void;
 }
 
 const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const { currentLevel, completionTime } = useGameStore();
+
+  const getLevelName = () => {
+    switch (currentLevel) {
+      case 0: return 'Build Something Vibeable';
+      case 1: return 'Newsletter Card';
+      case 2: return 'Feature Section';
+      case 3: return 'Navbar + Hero + Footer';
+      default: return 'Challenge';
+    }
+  };
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      // Get current positions from physics pieces
+      const positions: Record<string, { x: number; y: number; angle: number }> = {};
+      const physicsPieces = document.querySelectorAll('[data-physics-piece]');
+      
+      physicsPieces.forEach((element) => {
+        const pieceId = element.getAttribute('data-physics-piece');
+        if (pieceId) {
+          const rect = element.getBoundingClientRect();
+          const transform = window.getComputedStyle(element).transform;
+          
+          // Extract position and rotation from transform matrix
+          let x = rect.left + rect.width / 2;
+          let y = rect.top + rect.height / 2;
+          let angle = 0;
+          
+          if (transform && transform !== 'none') {
+            const matrix = transform.match(/matrix.*\((.+)\)/);
+            if (matrix) {
+              const values = matrix[1].split(', ').map(Number);
+              if (values.length >= 6) {
+                x = values[4] + rect.width / 2;
+                y = values[5] + rect.height / 2;
+                angle = Math.atan2(values[1], values[0]);
+              }
+            }
+          }
+          
+          positions[pieceId] = { x, y, angle };
+        }
+      });
+
+      const response = await fetch('/api/save-layout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          levelId: currentLevel,
+          levelName: getLevelName(),
+          positions,
+          completionTime: completionTime || 0,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save layout');
+      }
+
+      const { id } = await response.json();
+      const baseUrl = window.location.origin;
+      setPublishedUrl(`${baseUrl}/view/${id}`);
+    } catch (error) {
+      console.error('Failed to publish:', error);
+      alert('Failed to publish layout. Please try again.');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (publishedUrl) {
+      navigator.clipboard.writeText(publishedUrl);
+      alert('Link copied to clipboard!');
+    }
+  };
+
   return (
     <Dialog open={true}>
       <DialogContent className="glass border-neon-cyan/50 shadow-2xl max-w-lg">
@@ -30,21 +115,55 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
             <div className="bg-synth-800/50 rounded-lg p-4 border border-neon-purple/30">
               <p className="text-sm leading-relaxed">
                 You've mastered the art of physics-based UI reconstruction! 
-                Time to put your skills to the test with more challenging levels.
+                {publishedUrl ? ' Your creation has been published!' : ' Share your creation with the world!'}
               </p>
             </div>
             
-            <div className="text-neon-yellow text-sm">
-              ⚡ Ready for the real challenge?
-            </div>
+            {publishedUrl ? (
+              <div className="space-y-3">
+                <div className="text-neon-green text-sm font-semibold">
+                  ✨ Published Successfully!
+                </div>
+                <div className="bg-synth-900/50 rounded-lg p-3 border border-neon-green/30">
+                  <div className="text-xs text-muted-foreground mb-2">Share this link:</div>
+                  <div className="text-sm text-neon-cyan break-all font-mono">
+                    {publishedUrl}
+                  </div>
+                </div>
+                <Button
+                  variant="neon-cyan"
+                  size="sm"
+                  onClick={copyToClipboard}
+                  className="text-sm px-6"
+                >
+                  📋 Copy Link
+                </Button>
+              </div>
+            ) : (
+              <div className="text-neon-yellow text-sm">
+                ⚡ Ready for the real challenge?
+              </div>
+            )}
           </div>
           
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center gap-4 mt-8">
+            {!publishedUrl && (
+              <Button
+                variant="neon-purple"
+                size="lg"
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="text-lg px-8 py-4 h-16 font-bold"
+              >
+                {isPublishing ? '📤 Publishing...' : '🌐 Publish & Share'}
+              </Button>
+            )}
+            
             <Button
               variant="neon-pink"
               size="lg"
               onClick={onNextLevel}
-              className="text-xl px-12 py-4 h-16 font-bold"
+              className="text-lg px-8 py-4 h-16 font-bold"
             >
               🚀 NEXT LEVEL
             </Button>

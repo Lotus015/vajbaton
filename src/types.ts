@@ -34,5 +34,29 @@ export const level2Pieces: BodyDef[] = [
   { id: 'decorative-accent', x: 450, y: 180, w: 60, h: 60 },
 ];
 
+// Level 3: Navbar + Hero + Footer pieces
+export const level3Pieces: BodyDef[] = [
+  // Navbar pieces (no background)
+  { id: 'logo', x: 40, y: 20, w: 120, h: 40 },
+  { id: 'nav-link-1', x: 300, y: 25, w: 80, h: 30 },
+  { id: 'nav-link-2', x: 400, y: 25, w: 80, h: 30 },
+  { id: 'nav-link-3', x: 500, y: 25, w: 80, h: 30 },
+  { id: 'search-icon', x: 840, y: 25, w: 30, h: 30 },
+  
+  // Hero section pieces (no background)
+  { id: 'hero-heading', x: 200, y: 180, w: 600, h: 80 },
+  { id: 'hero-subheading', x: 250, y: 280, w: 500, h: 40 },
+  { id: 'get-started-btn', x: 300, y: 350, w: 140, h: 50 },
+  { id: 'view-demo-btn', x: 460, y: 350, w: 140, h: 50 },
+  { id: 'hero-illustration', x: 650, y: 150, w: 280, h: 280 },
+  
+  // Footer pieces (no background)
+  { id: 'footer-column-1', x: 100, y: 620, w: 200, h: 60 },
+  { id: 'footer-column-2', x: 350, y: 620, w: 200, h: 60 },
+  { id: 'social-icon-1', x: 700, y: 630, w: 40, h: 40 },
+  { id: 'social-icon-2', x: 760, y: 630, w: 40, h: 40 },
+  { id: 'social-icon-3', x: 820, y: 630, w: 40, h: 40 },
+];
+
 // Legacy export for backward compatibility
 export const pieces = tutorialPieces;
