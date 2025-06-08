@@ -59,23 +59,23 @@ export default function HomePage() {
     setTotalPieces(currentPieces.length);
   }, [currentLevel, setTotalPieces, currentPieces.length]);
 
-  // Auto-break after 1.5 seconds when game starts (tutorial only)
+  // Auto-break after 1 second when game starts (tutorial only)
   useEffect(() => {
     if (currentLevel === 0 && isGameStarted && !isBroken && tutorialStep === 'drag') {
       const timer = setTimeout(() => {
         breakPieces();
-      }, 1500);
+      }, 1000);
       
       return () => clearTimeout(timer);
     }
   }, [currentLevel, isGameStarted, isBroken, tutorialStep, breakPieces]);
 
-  // Auto-break for regular levels after 2 seconds
+  // Auto-break for regular levels after 1 second
   useEffect(() => {
     if (currentLevel > 0 && isGameStarted && !isBroken) {
       const timer = setTimeout(() => {
         breakPieces();
-      }, 2000);
+      }, 1000);
       
       return () => clearTimeout(timer);
     }

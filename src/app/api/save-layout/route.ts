@@ -5,6 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const { levelId, levelName, positions, completionTime } = await request.json();
 
+    console.log('Attempting to save layout:', { levelId, levelName, completionTime });
+
     const { data, error } = await supabase
       .from('layouts')
       .insert({
@@ -18,12 +20,19 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Failed to save layout' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to save layout', 
+        details: error.message 
+      }, { status: 500 });
     }
 
+    console.log('Layout saved successfully:', data);
     return NextResponse.json({ id: data.id });
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

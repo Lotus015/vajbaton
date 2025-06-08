@@ -113,7 +113,7 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
           
           <div className="space-y-4 text-center text-foreground">
             <div className="bg-synth-800/50 rounded-lg p-4 border border-neon-purple/30">
-              <p className="text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed break-words">
                 You've mastered the art of physics-based UI reconstruction! 
                 {publishedUrl ? ' Your creation has been published!' : ' Share your creation with the world!'}
               </p>
@@ -126,7 +126,7 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
                 </div>
                 <div className="bg-synth-900/50 rounded-lg p-3 border border-neon-green/30">
                   <div className="text-xs text-muted-foreground mb-2">Share this link:</div>
-                  <div className="text-sm text-neon-cyan break-all font-mono">
+                  <div className="text-sm text-neon-cyan break-all font-mono overflow-hidden">
                     {publishedUrl}
                   </div>
                 </div>
@@ -146,14 +146,14 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
             )}
           </div>
           
-          <div className="flex justify-center gap-4 mt-8">
+          <div className="flex flex-col gap-4 mt-8">
             {!publishedUrl && (
               <Button
                 variant="neon-purple"
                 size="lg"
                 onClick={handlePublish}
                 disabled={isPublishing}
-                className="text-lg px-8 py-4 h-16 font-bold"
+                className="text-lg px-8 py-4 h-16 font-bold w-full"
               >
                 {isPublishing ? '📤 Publishing...' : '🌐 Publish & Share'}
               </Button>
@@ -163,7 +163,7 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
               variant="neon-pink"
               size="lg"
               onClick={onNextLevel}
-              className="text-lg px-8 py-4 h-16 font-bold"
+              className="text-lg px-8 py-4 h-16 font-bold w-full"
             >
               🚀 NEXT LEVEL
             </Button>

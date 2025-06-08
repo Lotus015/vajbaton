@@ -2,12 +2,6 @@
   "redirects": [
     {
       "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "vajbaton-cqqescs1h-miodragtodorovic-3274s-projects.vercel.app"
-        }
-      ],
       "destination": "https://vajbaton-git-main-miodragtodorovic-3274s-projects.vercel.app/$1",
       "permanent": true
     }
