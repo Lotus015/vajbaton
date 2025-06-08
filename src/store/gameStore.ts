@@ -92,7 +92,6 @@ const useGameStore = create<GameState>((set, get) => {
         isGameStarted: keepGameStarted || false,
         isBroken: false,
         snappedPieces: new Set(),
-        totalPieces: 0,
         isLevelRendered: false,
         isLevelComplete: false,
         completionTime: null

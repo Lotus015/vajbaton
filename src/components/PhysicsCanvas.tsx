@@ -30,6 +30,10 @@ export default function PhysicsCanvas({
   const constraintsRef = useRef<Record<string, Matter.Constraint[]>>({});
   const mouseConstraintRef = useRef<Matter.MouseConstraint | null>(null);
   const originalPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+  
+  // Anti-gravity state for Level 5
+  const antiGravityBodiesRef = useRef<Record<string, Matter.Body>>({});
+  const hasMovedRef = useRef<Record<string, boolean>>({});
 
   // Use refs to hold the latest callbacks to avoid stale closures
   const onPieceSnappedRef = useRef(onPieceSnapped);
@@ -50,6 +54,8 @@ export default function PhysicsCanvas({
     bodiesRef.current = {};
     constraintsRef.current = {};
     originalPositionsRef.current = {};
+    antiGravityBodiesRef.current = {};
+    hasMovedRef.current = {};
 
     // 1) Setup engine & world
     const engine = Matter.Engine.create();
@@ -104,6 +110,15 @@ export default function PhysicsCanvas({
       { isStatic: true, render: { visible: false } }
     );
     
+    // Add top wall
+    const topWall = Matter.Bodies.rectangle(
+      window.innerWidth / 2,
+      -30,
+      window.innerWidth,
+      60,
+      { isStatic: true, render: { visible: false } }
+    );
+    
     // Add left and right walls
     const leftWall = Matter.Bodies.rectangle(
       -30,
@@ -121,7 +136,7 @@ export default function PhysicsCanvas({
       { isStatic: true, render: { visible: false } }
     );
     
-    Matter.World.add(world, [ground, leftWall, rightWall]);
+    Matter.World.add(world, [ground, topWall, leftWall, rightWall]);
 
     pieces.forEach((p) => {
       const centerX = p.x + p.w / 2;
@@ -197,6 +212,13 @@ export default function PhysicsCanvas({
         Matter.Body.setAngularVelocity(body, 0);
         Matter.Body.setAngle(body, 0);
         
+        // Remove anti-gravity body if it exists
+        if (antiGravityBodiesRef.current[pieceId]) {
+          Matter.World.remove(engine.world, antiGravityBodiesRef.current[pieceId]);
+          delete antiGravityBodiesRef.current[pieceId];
+          hasMovedRef.current[pieceId] = false;
+        }
+        
         // Recreate the constraints
         const piece = pieces.find(p => p.id === pieceId);
         if (piece) {
@@ -246,12 +268,36 @@ export default function PhysicsCanvas({
       snapPieceBack(event.body);
     });
 
-    // Add startdrag event listener for tutorial
+    // Add startdrag event listener for tutorial and anti-gravity
     Matter.Events.on(mouseConstraint, 'startdrag', (event: any) => {
       const body = event.body;
       if (body && body.label.startsWith('box-') && onStartDragRef.current) {
         const pieceId = body.label.replace('box-', '');
         onStartDragRef.current(pieceId);
+        
+        // Level 5 anti-gravity: Create invisible repulsive body on first move
+        if (!hasMovedRef.current[pieceId]) {
+          hasMovedRef.current[pieceId] = true;
+          const originalPos = originalPositionsRef.current[pieceId];
+          
+          if (originalPos) {
+            // Create invisible static body at original position
+            const antiGravityBody = Matter.Bodies.circle(
+              originalPos.x,
+              originalPos.y,
+              40, // Radius of repulsion
+              {
+                isStatic: true,
+                isSensor: true, // Won't collide but can detect proximity
+                render: { visible: false },
+                label: `antigrav-${pieceId}`
+              }
+            );
+            
+            antiGravityBodiesRef.current[pieceId] = antiGravityBody;
+            Matter.World.add(engine.world, antiGravityBody);
+          }
+        }
       }
     });
 
@@ -315,7 +361,7 @@ export default function PhysicsCanvas({
     
     document.addEventListener('keydown', handleKeyDown);
 
-    // 6) Sync positions after each update
+    // 6) Sync positions and apply anti-gravity forces
     Matter.Events.on(engine, 'afterUpdate', () => {
       const pos: Record<string, { x: number; y: number; angle: number }> = {};
       for (const [id, body] of Object.entries(bodiesRef.current)) {
@@ -325,6 +371,24 @@ export default function PhysicsCanvas({
             y: body.position.y,
             angle: body.angle,
           };
+          
+          // Apply anti-gravity force if anti-gravity body exists
+          const antiGravityBody = antiGravityBodiesRef.current[id];
+          if (antiGravityBody) {
+            const distance = Math.sqrt(
+              Math.pow(body.position.x - antiGravityBody.position.x, 2) +
+              Math.pow(body.position.y - antiGravityBody.position.y, 2)
+            );
+            
+            // Apply repulsive force when within range (stronger when closer)
+            if (distance < 120 && distance > 0) {
+              const forceStrength = 0.0008 * (120 - distance) / distance; // Stronger when closer
+              const forceX = (body.position.x - antiGravityBody.position.x) * forceStrength;
+              const forceY = (body.position.y - antiGravityBody.position.y) * forceStrength;
+              
+              Matter.Body.applyForce(body, body.position, { x: forceX, y: forceY });
+            }
+          }
         }
       }
       onUpdate(pos);
@@ -355,6 +419,9 @@ export default function PhysicsCanvas({
     const world = engineRef.current?.world;
     if (!world) return;
     
+    // Define modal pieces that should break more gently
+    const modalPieces = ['modal-backdrop', 'modal-container', 'modal-title', 'name-input', 'email-input', 'password-input', 'submit-btn', 'cancel-btn'];
+    
     // Reverse the order to break bottom pieces first
     const entries = Object.entries(constraintsRef.current).reverse();
     
@@ -376,13 +443,16 @@ export default function PhysicsCanvas({
         setTimeout(() => {
           Matter.World.remove(world, constraints[2]);
           
-          // Apply a stronger force at the corner for dramatic swing
-          const forceX = (Math.random() - 0.5) * 0.1; // Much stronger force
-          const forceY = -0.02; // Stronger upward force
+          // Apply much gentler force for modal pieces, normal force for others
+          const isModalPiece = modalPieces.includes(pieceId);
+          const forceMultiplier = isModalPiece ? 0 : 1; // No force for modal pieces
+          
+          const forceX = (Math.random() - 0.5) * 0.02 * forceMultiplier;
+          const forceY = -0.005 * forceMultiplier;
           const forcePoint = { 
-            x: body.position.x + (Math.random() - 0.5) * 100, 
-            y: body.position.y - 50 
-          }; // Apply force away from center for torque
+            x: body.position.x + (Math.random() - 0.5) * 30 * forceMultiplier, 
+            y: body.position.y - 20 * forceMultiplier
+          };
           Matter.Body.applyForce(body, forcePoint, { x: forceX, y: forceY });
         }, 800);
       }, pieceIndex * 300); // Stagger pieces by 300ms

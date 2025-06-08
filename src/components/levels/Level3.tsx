@@ -127,8 +127,8 @@ const Level3NavbarHeroFooter = memo(({ positions = {} }: Level3NavbarHeroFooterP
           className="absolute px-8 py-3"
           data-physics-piece="get-started-btn"
           style={{
-            width: level3Pieces[7].w,
-            height: level3Pieces[7].h,
+            width: level3Pieces[6].w,
+            height: level3Pieces[6].h,
             ...getTransform('get-started-btn')
           }}
         >
@@ -142,8 +142,8 @@ const Level3NavbarHeroFooter = memo(({ positions = {} }: Level3NavbarHeroFooterP
           className="absolute px-8 py-3"
           data-physics-piece="view-demo-btn"
           style={{
-            width: level3Pieces[8].w,
-            height: level3Pieces[8].h,
+            width: level3Pieces[7].w,
+            height: level3Pieces[7].h,
             ...getTransform('view-demo-btn')
           }}
         >
@@ -155,8 +155,8 @@ const Level3NavbarHeroFooter = memo(({ positions = {} }: Level3NavbarHeroFooterP
           className="absolute bg-gradient-to-br from-neon-purple/20 to-neon-cyan/20 border-2 border-neon-green/50 rounded-lg flex items-center justify-center neon-glow-green"
           data-physics-piece="hero-illustration"
           style={{
-            width: level3Pieces[9].w,
-            height: level3Pieces[9].h,
+            width: level3Pieces[8].w,
+            height: level3Pieces[8].h,
             ...getTransform('hero-illustration')
           }}
         >
@@ -210,8 +210,8 @@ const Level3NavbarHeroFooter = memo(({ positions = {} }: Level3NavbarHeroFooterP
           className="absolute bg-neon-blue/20 rounded-full border border-neon-blue/50 flex items-center justify-center cursor-pointer hover:bg-neon-blue/30 transition-colors"
           data-physics-piece="social-icon-1"
           style={{
-            width: level3Pieces[12].w,
-            height: level3Pieces[12].h,
+            width: level3Pieces[11].w,
+            height: level3Pieces[11].h,
             ...getTransform('social-icon-1')
           }}
         >
@@ -222,8 +222,8 @@ const Level3NavbarHeroFooter = memo(({ positions = {} }: Level3NavbarHeroFooterP
           className="absolute bg-neon-cyan/20 rounded-full border border-neon-cyan/50 flex items-center justify-center cursor-pointer hover:bg-neon-cyan/30 transition-colors"
           data-physics-piece="social-icon-2"
           style={{
-            width: level3Pieces[13].w,
-            height: level3Pieces[13].h,
+            width: level3Pieces[12].w,
+            height: level3Pieces[12].h,
             ...getTransform('social-icon-2')
           }}
         >
@@ -234,8 +234,8 @@ const Level3NavbarHeroFooter = memo(({ positions = {} }: Level3NavbarHeroFooterP
           className="absolute bg-neon-pink/20 rounded-full border border-neon-pink/50 flex items-center justify-center cursor-pointer hover:bg-neon-pink/30 transition-colors"
           data-physics-piece="social-icon-3"
           style={{
-            width: level3Pieces[14].w,
-            height: level3Pieces[14].h,
+            width: level3Pieces[13].w,
+            height: level3Pieces[13].h,
             ...getTransform('social-icon-3')
           }}
         >

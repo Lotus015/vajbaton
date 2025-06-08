@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Level1Newsletter from '@/components/levels/Level1';
 import Level2FeatureSection from '@/components/levels/Level2';
 import Level3NavbarHeroFooter from '@/components/levels/Level3';
+import Level4FormModal from '@/components/levels/Level4';
 
 interface ViewPageProps {
   params: Promise<{ id: string }>;
@@ -44,6 +45,8 @@ export default async function ViewPage({ params }: ViewPageProps) {
         return <Level2FeatureSection positions={layout.positions} />;
       case 3:
         return <Level3NavbarHeroFooter positions={layout.positions} />;
+      case 4:
+        return <Level4FormModal positions={layout.positions} />;
       default:
         return (
           <div className="absolute inset-0 flex items-center justify-center">

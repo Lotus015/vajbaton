@@ -34,14 +34,13 @@ export const level2Pieces: BodyDef[] = [
   { id: 'decorative-accent', x: 450, y: 180, w: 60, h: 60 },
 ];
 
-// Level 3: Navbar + Hero + Footer pieces
+// Level 3: Navbar + Hero + Footer pieces (formerly Level 4)
 export const level3Pieces: BodyDef[] = [
   // Navbar pieces (no background)
   { id: 'logo', x: 40, y: 20, w: 120, h: 40 },
   { id: 'nav-link-1', x: 300, y: 25, w: 80, h: 30 },
   { id: 'nav-link-2', x: 400, y: 25, w: 80, h: 30 },
   { id: 'nav-link-3', x: 500, y: 25, w: 80, h: 30 },
-  { id: 'search-icon', x: 840, y: 25, w: 30, h: 30 },
   
   // Hero section pieces (no background)
   { id: 'hero-heading', x: 200, y: 180, w: 600, h: 80 },
@@ -56,6 +55,71 @@ export const level3Pieces: BodyDef[] = [
   { id: 'social-icon-1', x: 700, y: 630, w: 40, h: 40 },
   { id: 'social-icon-2', x: 760, y: 630, w: 40, h: 40 },
   { id: 'social-icon-3', x: 820, y: 630, w: 40, h: 40 },
+];
+
+// Level 4: Interactive Form Modal pieces - simplified to just form elements
+export const level4Pieces: BodyDef[] = [
+  // Special neon header that swings
+  { id: 'neon-header', x: 150, y: 20, w: 700, h: 50 },
+  
+  // Base page elements
+  { id: 'page-header', x: 150, y: 90, w: 700, h: 40 },
+  { id: 'feature-card-1', x: 100, y: 150, w: 180, h: 120 },
+  { id: 'feature-card-2', x: 310, y: 150, w: 180, h: 120 },
+  { id: 'feature-card-3', x: 520, y: 150, w: 180, h: 120 },
+  
+  // Form elements only - positioned in center
+  { id: 'modal-title', x: 300, y: 320, w: 300, h: 40 },
+  { id: 'name-input', x: 300, y: 380, w: 300, h: 40 },
+  { id: 'email-input', x: 300, y: 430, w: 300, h: 40 },
+  { id: 'password-input', x: 300, y: 480, w: 300, h: 40 },
+  { id: 'submit-btn', x: 300, y: 530, w: 140, h: 40 },
+  { id: 'cancel-btn', x: 460, y: 530, w: 140, h: 40 },
+];
+
+// Level 5: The "Easy" Level - single button with anti-gravity
+export const level5Pieces: BodyDef[] = [
+  { id: 'easy-button', x: 450, y: 275, w: 160, h: 60 }, // Centered button
+];
+
+// Central source of truth for all levels
+export const allLevels = [
+  { 
+    id: 0, 
+    name: 'Tutorial', 
+    description: 'Build Something Vibeable', 
+    pieces: tutorialPieces 
+  },
+  { 
+    id: 1, 
+    name: 'Level 1', 
+    description: 'Newsletter Card', 
+    pieces: level1Pieces 
+  },
+  { 
+    id: 2, 
+    name: 'Level 2', 
+    description: 'Feature Section', 
+    pieces: level2Pieces 
+  },
+  { 
+    id: 3, 
+    name: 'Level 3', 
+    description: 'Navbar + Hero + Footer', 
+    pieces: level3Pieces 
+  },
+  { 
+    id: 4, 
+    name: 'Level 4', 
+    description: 'Interactive Form Modal', 
+    pieces: level4Pieces 
+  },
+  { 
+    id: 5, 
+    name: 'Level 5', 
+    description: 'The "Easy" Level', 
+    pieces: level5Pieces 
+  },
 ];
 
 // Legacy export for backward compatibility

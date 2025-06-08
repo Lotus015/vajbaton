@@ -21,6 +21,8 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
       case 1: return 'Newsletter Card';
       case 2: return 'Feature Section';
       case 3: return 'Navbar + Hero + Footer';
+      case 4: return 'Interactive Form Modal';
+      case 5: return 'The "Easy" Level';
       default: return 'Challenge';
     }
   };
@@ -96,24 +98,24 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
 
   return (
     <Dialog open={true}>
-      <DialogContent className="glass border-neon-cyan/50 shadow-2xl max-w-lg">
+      <DialogContent className="glass border-neon-cyan/50 shadow-2xl max-w-md w-[90vw] max-h-[90vh] overflow-y-auto">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <DialogHeader className="text-center mb-6">
-            <DialogTitle className="text-4xl font-black gradient-text mb-4">
+          <DialogHeader className="text-center mb-4">
+            <DialogTitle className="text-2xl sm:text-3xl font-black gradient-text mb-2">
               🎉 CONGRATULATIONS!
             </DialogTitle>
-            <div className="text-neon-cyan text-xl font-medium mb-4">
+            <div className="text-neon-cyan text-lg font-medium mb-2">
               You are now a vibecoder!
             </div>
           </DialogHeader>
           
-          <div className="space-y-4 text-center text-foreground">
-            <div className="bg-synth-800/50 rounded-lg p-4 border border-neon-purple/30">
-              <p className="text-sm leading-relaxed break-words">
+          <div className="space-y-3 text-center text-foreground">
+            <div className="bg-synth-800/50 rounded-lg p-3 border border-neon-purple/30">
+              <p className="text-sm leading-relaxed">
                 You've mastered the art of physics-based UI reconstruction! 
                 {publishedUrl ? ' Your creation has been published!' : ' Share your creation with the world!'}
               </p>
@@ -126,7 +128,7 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
                 </div>
                 <div className="bg-synth-900/50 rounded-lg p-3 border border-neon-green/30">
                   <div className="text-xs text-muted-foreground mb-2">Share this link:</div>
-                  <div className="text-sm text-neon-cyan break-all font-mono overflow-hidden">
+                  <div className="text-xs text-neon-cyan break-all font-mono overflow-hidden">
                     {publishedUrl}
                   </div>
                 </div>
@@ -134,7 +136,7 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
                   variant="neon-cyan"
                   size="sm"
                   onClick={copyToClipboard}
-                  className="text-sm px-6"
+                  className="text-sm px-4 py-2"
                 >
                   📋 Copy Link
                 </Button>
@@ -146,14 +148,14 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
             )}
           </div>
           
-          <div className="flex flex-col gap-4 mt-8">
+          <div className="flex flex-col gap-3 mt-6">
             {!publishedUrl && (
               <Button
                 variant="neon-purple"
                 size="lg"
                 onClick={handlePublish}
                 disabled={isPublishing}
-                className="text-lg px-8 py-4 h-16 font-bold w-full"
+                className="text-base px-6 py-3 h-12 font-bold w-full"
               >
                 {isPublishing ? '📤 Publishing...' : '🌐 Publish & Share'}
               </Button>
@@ -163,7 +165,7 @@ const CompletionModal = ({ onNextLevel }: CompletionModalProps) => {
               variant="neon-pink"
               size="lg"
               onClick={onNextLevel}
-              className="text-lg px-8 py-4 h-16 font-bold w-full"
+              className="text-base px-6 py-3 h-12 font-bold w-full"
             >
               🚀 NEXT LEVEL
             </Button>

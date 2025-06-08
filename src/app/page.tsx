@@ -6,12 +6,17 @@ import PhysicsCanvas from '@/components/PhysicsCanvas';
 import InstructionsModal from '@/components/InstructionsModal';
 import TutorialPopup from '@/components/TutorialPopup';
 import CompletionModal from '@/components/CompletionModal';
+import LevelSelectorModal from '@/components/LevelSelectorModal';
 import Level1Newsletter from '@/components/levels/Level1';
 import Level2FeatureSection from '@/components/levels/Level2';
 import Level3NavbarHeroFooter from '@/components/levels/Level3';
+import Level4FormModal from '@/components/levels/Level4';
+import Level5Easy from '@/components/levels/Level5';
+import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { tutorialPieces, level1Pieces, level2Pieces, level3Pieces } from '@/types';
+import { tutorialPieces, level1Pieces, level2Pieces, level3Pieces, level4Pieces, level5Pieces } from '@/types';
 import useGameStore from '@/store/gameStore';
+import { allLevels } from '@/types';
 
 type TutorialStep = 'welcome' | 'drag' | 'spacebar' | 'complete' | 'finished';
 
@@ -40,16 +45,30 @@ export default function HomePage() {
   const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
   const [hasStartedDrag, setHasStartedDrag] = useState(false);
   const [hasUsedSpacebar, setHasUsedSpacebar] = useState(false);
+  
+  // Level selector modal state
+  const [isLevelSelectorOpen, setIsLevelSelectorOpen] = useState(false);
+  
+  // Reset counter to force PhysicsCanvas re-mount
+  const [resetCounter, setResetCounter] = useState(0);
+
+  // Keyboard listener for Command+K
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        setIsLevelSelectorOpen(prev => !prev);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Get current level pieces
   const getCurrentPieces = () => {
-    switch (currentLevel) {
-      case 0: return tutorialPieces;
-      case 1: return level1Pieces;
-      case 2: return level2Pieces;
-      case 3: return level3Pieces;
-      default: return tutorialPieces;
-    }
+    const level = allLevels.find(l => l.id === currentLevel);
+    return level ? level.pieces : allLevels[0].pieces; // fallback to tutorial
   };
 
   const currentPieces = getCurrentPieces();
@@ -141,10 +160,24 @@ export default function HomePage() {
     } else if (currentLevel === 2) {
       // Move from Level 2 to Level 3
       setLevel(3);
+    } else if (currentLevel === 3) {
+      // Move from Level 3 to Level 4
+      setLevel(4);
+    } else if (currentLevel === 4) {
+      // Move from Level 4 to Level 5
+      setLevel(5);
     } else {
       // For now, just reset current level
       resetLevel();
     }
+  };
+
+  const handleResetLevel = () => {
+    setPositions({}); // Reset positions to initial
+    setResetCounter(c => c + 1); // Force PhysicsCanvas re-mount
+    resetLevel(true); // Keep game started
+    setTotalPieces(currentPieces.length); // Re-set total pieces count
+    startGame(); // Restart timer and game logic
   };
 
   const piecesLeft = totalPieces - snappedPieces.size;
@@ -158,13 +191,16 @@ export default function HomePage() {
         <div className="opacity-30">
           {currentLevel === 0 ? (
             <div className="relative w-screen h-screen bg-synth-950 cyber-grid scanlines overflow-hidden">
+              {/* Tutorial elements */}
               <div
                 id="header"
                 className="absolute text-neon-cyan font-bold text-4xl flex items-center justify-center"
                 style={{
                   width: currentPieces[0].w,
                   height: currentPieces[0].h,
-                  transform: `translate(${currentPieces[0].x}px, ${currentPieces[0].y}px)`,
+                  transform: `translate(${(positions.header?.x ?? currentPieces[0].x + currentPieces[0].w/2) - currentPieces[0].w/2}px, ${
+                    (positions.header?.y ?? currentPieces[0].y + currentPieces[0].h/2) - currentPieces[0].h/2
+                  }px) rotate(${positions.header?.angle ?? 0}rad)`,
                   transformOrigin: 'center',
                 }}
               >
@@ -176,7 +212,9 @@ export default function HomePage() {
                 style={{
                   width: currentPieces[1].w,
                   height: currentPieces[1].h,
-                  transform: `translate(${currentPieces[1].x}px, ${currentPieces[1].y}px)`,
+                  transform: `translate(${(positions.button?.x ?? currentPieces[1].x + currentPieces[1].w/2) - currentPieces[1].w/2}px, ${
+                    (positions.button?.y ?? currentPieces[1].y + currentPieces[1].h/2) - currentPieces[1].h/2
+                  }px) rotate(${positions.button?.angle ?? 0}rad)`,
                   transformOrigin: 'center',
                 }}
               >
@@ -184,7 +222,7 @@ export default function HomePage() {
               </button>
             </div>
           ) : (
-            <Level1Newsletter />
+            <Level1Newsletter positions={positions} />
           )}
         </div>
       </div>
@@ -192,23 +230,13 @@ export default function HomePage() {
   }
 
   const getLevelTitle = () => {
-    switch (currentLevel) {
-      case 0: return 'Tutorial Level';
-      case 1: return 'Level 1';
-      case 2: return 'Level 2';
-      case 3: return 'Level 3';
-      default: return `Level ${currentLevel}`;
-    }
+    const level = allLevels.find(l => l.id === currentLevel);
+    return level ? level.name : `Level ${currentLevel}`;
   };
 
   const getLevelDescription = () => {
-    switch (currentLevel) {
-      case 0: return 'Build Something Vibeable';
-      case 1: return 'Newsletter Card';
-      case 2: return 'Feature Section';
-      case 3: return 'Navbar + Hero + Footer';
-      default: return 'Challenge';
-    }
+    const level = allLevels.find(l => l.id === currentLevel);
+    return level ? level.description : 'Challenge';
   };
 
   return (
@@ -245,6 +273,18 @@ export default function HomePage() {
                 </div>
                 <div className="text-xs text-neon-green/60 font-medium tracking-wider">LEFT</div>
               </div>
+            </div>
+            
+            {/* Reset Level Button */}
+            <div className="flex justify-end mt-3">
+              <Button
+                variant="neon-purple"
+                size="sm"
+                onClick={handleResetLevel}
+                className="text-xs px-3 py-1"
+              >
+                🔄 Reset Level
+              </Button>
             </div>
           </CardHeader>
         </Card>
@@ -290,6 +330,12 @@ export default function HomePage() {
         <CompletionModal onNextLevel={nextLevel} />
       )}
 
+      {/* Level Selector Modal (Dev Mode) */}
+      <LevelSelectorModal 
+        open={isLevelSelectorOpen} 
+        onOpenChange={setIsLevelSelectorOpen} 
+      />
+
       {/* Render current level */}
       {currentLevel === 0 ? (
         <>
@@ -329,6 +375,10 @@ export default function HomePage() {
         <Level2FeatureSection positions={positions} />
       ) : currentLevel === 3 ? (
         <Level3NavbarHeroFooter positions={positions} />
+      ) : currentLevel === 4 ? (
+        <Level4FormModal positions={positions} />
+      ) : currentLevel === 5 ? (
+        <Level5Easy positions={positions} />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-neon-cyan text-2xl">Level {currentLevel} - Coming Soon!</div>
@@ -337,6 +387,7 @@ export default function HomePage() {
 
       {/* Physics layer */}
       <PhysicsCanvas
+        key={resetCounter}
         pieces={currentPieces}
         breakMode={isBroken}
         onUpdate={(pos) => setPositions(pos)}
@@ -344,6 +395,7 @@ export default function HomePage() {
         onStartDrag={handleStartDrag}
         onSpacebarSnap={handleSpacebarSnap}
       />
+
     </div>
   );
 }
