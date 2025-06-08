@@ -1,11 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import PhysicsCanvas from '@/components/PhysicsCanvas';
 import InstructionsModal from '@/components/InstructionsModal';
+import TutorialPopup from '@/components/TutorialPopup';
+import CompletionModal from '@/components/CompletionModal';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
 import { pieces } from '@/types';
+
+type TutorialStep = 'welcome' | 'drag' | 'spacebar' | 'complete' | 'finished';
 
 export default function HomePage() {
   // 1) Local state
@@ -16,6 +21,9 @@ export default function HomePage() {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [snappedPieces, setSnappedPieces] = useState<Set<string>>(new Set());
+  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
+  const [hasStartedDrag, setHasStartedDrag] = useState(false);
+  const [hasUsedSpacebar, setHasUsedSpacebar] = useState(false);
 
   // Timer
   useEffect(() => {
@@ -30,14 +38,30 @@ export default function HomePage() {
 
   // Auto-break after 1.5 seconds when game starts
   useEffect(() => {
-    if (isGameStarted && !broken) {
+    if (isGameStarted && !broken && tutorialStep === 'drag') {
       const timer = setTimeout(() => {
         setBroken(true);
       }, 1500);
       
       return () => clearTimeout(timer);
     }
-  }, [isGameStarted, broken]);
+  }, [isGameStarted, broken, tutorialStep]);
+
+  // Check for level completion - proper React pattern
+  useEffect(() => {
+    console.log('🔍 Completion check:', {
+      snappedPiecesSize: snappedPieces.size,
+      piecesLength: pieces.length,
+      hasUsedSpacebar,
+      tutorialStep,
+      snappedPiecesArray: Array.from(snappedPieces)
+    });
+    
+    if (snappedPieces.size === pieces.length && hasUsedSpacebar) {
+      console.log('✅ Tutorial complete! Setting to finished');
+      setTutorialStep('finished');
+    }
+  }, [snappedPieces, hasUsedSpacebar]);
 
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -46,7 +70,57 @@ export default function HomePage() {
   };
 
   const handlePieceSnapped = (pieceId: string) => {
-    setSnappedPieces(prev => new Set([...prev, pieceId]));
+    console.log('🎯 Piece snapped (auto):', pieceId);
+    setSnappedPieces(prev => {
+      const newSet = new Set([...prev, pieceId]);
+      console.log('📦 Updated snapped pieces (auto):', Array.from(newSet));
+      return newSet;
+    });
+  };
+
+  const handleStartDrag = (pieceId: string) => {
+    console.log('🖱️ Started dragging:', pieceId);
+    if (!hasStartedDrag && tutorialStep === 'drag') {
+      console.log('📚 Moving to spacebar step');
+      setHasStartedDrag(true);
+      setTutorialStep('spacebar');
+    }
+  };
+
+  const handleSpacebarSnap = (pieceId: string) => {
+    console.log('⌨️ Spacebar snap:', pieceId);
+    
+    if (!hasUsedSpacebar && tutorialStep === 'spacebar') {
+      console.log('🎉 First spacebar use! Moving to complete step');
+      setHasUsedSpacebar(true);
+      setTutorialStep('complete');
+    }
+    
+    setSnappedPieces(prev => {
+      const newSet = new Set([...prev, pieceId]);
+      console.log('📦 Updated snapped pieces (spacebar):', Array.from(newSet));
+      return newSet;
+    });
+  };
+
+  const startTutorial = () => {
+    setIsGameStarted(true);
+    setTutorialStep('drag');
+  };
+
+  const skipTutorial = () => {
+    setTutorialStep('finished');
+  };
+
+  const nextLevel = () => {
+    // For now, just reset the tutorial
+    setIsGameStarted(false);
+    setBroken(false);
+    setSnappedPieces(new Set());
+    setTutorialStep('welcome');
+    setHasStartedDrag(false);
+    setHasUsedSpacebar(false);
+    setTimeElapsed(0);
   };
 
   const piecesLeft = pieces.length - snappedPieces.size;
@@ -55,7 +129,7 @@ export default function HomePage() {
   if (!isGameStarted) {
     return (
       <div className="min-h-screen bg-synth-950 cyber-grid scanlines">
-        <InstructionsModal onStart={() => setIsGameStarted(true)} />
+        <InstructionsModal onStart={startTutorial} />
         {/* Preview of the level in the background */}
         <div className="opacity-30">
           <div className="relative w-screen h-screen bg-synth-950 cyber-grid scanlines overflow-hidden">
@@ -105,7 +179,7 @@ export default function HomePage() {
           <CardHeader className="p-4">
             <div className="text-right">
               <CardTitle className="text-sm font-bold gradient-text-secondary mb-1">
-                Physics Challenge
+                Tutorial Level
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground font-medium mb-3">
                 Build Something Vibeable
@@ -130,6 +204,44 @@ export default function HomePage() {
           </CardHeader>
         </Card>
       </motion.div>
+
+      {/* Tutorial Popups */}
+      <AnimatePresence>
+        {tutorialStep === 'drag' && (
+          <TutorialPopup
+            title="🎯 Step 1: Drag & Drop"
+            description="Watch the components break apart, then drag any piece around the screen to move it!"
+            position="top-center"
+            onSkip={skipTutorial}
+            showButtons={false}
+          />
+        )}
+        
+        {tutorialStep === 'spacebar' && (
+          <TutorialPopup
+            title="📌 Step 2: Pin in Place"
+            description="While dragging a piece, press SPACEBAR to pin it in that exact location!"
+            position="top-center"
+            onSkip={skipTutorial}
+            showButtons={false}
+          />
+        )}
+        
+        {tutorialStep === 'complete' && (
+          <TutorialPopup
+            title="🎉 Almost Done!"
+            description="Great! Now pin both pieces wherever you want them. You can drag them close to their original spots to snap them back automatically."
+            position="top-center"
+            onSkip={skipTutorial}
+            showButtons={false}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Completion Modal */}
+      {tutorialStep === 'finished' && (
+        <CompletionModal onNextLevel={nextLevel} />
+      )}
 
       {/* 2) Render header */}
       <div
@@ -169,6 +281,8 @@ export default function HomePage() {
         breakMode={broken}
         onUpdate={(pos) => setPositions(pos)}
         onPieceSnapped={handlePieceSnapped}
+        onStartDrag={handleStartDrag}
+        onSpacebarSnap={handleSpacebarSnap}
       />
     </div>
   );

@@ -12,6 +12,8 @@ interface PhysicsCanvasProps {
     { x: number; y: number; angle: number }
   >) => void;
   onPieceSnapped?: (pieceId: string) => void;
+  onStartDrag?: (pieceId: string) => void;
+  onSpacebarSnap?: (pieceId: string) => void;
 }
 
 export default function PhysicsCanvas({
@@ -19,6 +21,8 @@ export default function PhysicsCanvas({
   breakMode,
   onUpdate,
   onPieceSnapped,
+  onStartDrag,
+  onSpacebarSnap,
 }: PhysicsCanvasProps) {
   const sceneRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine>();
@@ -26,6 +30,18 @@ export default function PhysicsCanvas({
   const constraintsRef = useRef<Record<string, Matter.Constraint[]>>({});
   const mouseConstraintRef = useRef<Matter.MouseConstraint>();
   const originalPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+
+  // Use refs to hold the latest callbacks to avoid stale closures
+  const onPieceSnappedRef = useRef(onPieceSnapped);
+  const onStartDragRef = useRef(onStartDrag);
+  const onSpacebarSnapRef = useRef(onSpacebarSnap);
+
+  // Keep refs updated with latest callbacks
+  useEffect(() => {
+    onPieceSnappedRef.current = onPieceSnapped;
+    onStartDragRef.current = onStartDrag;
+    onSpacebarSnapRef.current = onSpacebarSnap;
+  }, [onPieceSnapped, onStartDrag, onSpacebarSnap]);
 
   useEffect(() => {
     // 1) Setup engine & world
@@ -209,8 +225,8 @@ export default function PhysicsCanvas({
           constraintsRef.current[pieceId] = [topLeftPin, topRightPin, bottomPin];
           Matter.World.add(engine.world, [topLeftPin, topRightPin, bottomPin]);
           
-          if (onPieceSnapped) {
-            onPieceSnapped(pieceId);
+          if (onPieceSnappedRef.current) {
+            onPieceSnappedRef.current(pieceId);
           }
         }
         return true;
@@ -220,6 +236,15 @@ export default function PhysicsCanvas({
 
     Matter.Events.on(mouseConstraint, 'enddrag', (event) => {
       snapPieceBack(event.body);
+    });
+
+    // Add startdrag event listener for tutorial
+    Matter.Events.on(mouseConstraint, 'startdrag', (event) => {
+      const body = event.body;
+      if (body && body.label.startsWith('box-') && onStartDragRef.current) {
+        const pieceId = body.label.replace('box-', '');
+        onStartDragRef.current(pieceId);
+      }
     });
 
     // Add spacebar listener for manual snap-back
@@ -270,6 +295,11 @@ export default function PhysicsCanvas({
 
             constraintsRef.current[pieceId] = [topLeftPin, topRightPin, bottomPin];
             Matter.World.add(engine.world, [topLeftPin, topRightPin, bottomPin]);
+            
+            // Notify tutorial system with latest callback
+            if (onSpacebarSnapRef.current) {
+              onSpacebarSnapRef.current(pieceId);
+            }
           }
         }
       }
