@@ -6,62 +6,86 @@ import PhysicsCanvas from '@/components/PhysicsCanvas';
 import InstructionsModal from '@/components/InstructionsModal';
 import TutorialPopup from '@/components/TutorialPopup';
 import CompletionModal from '@/components/CompletionModal';
+import Level1Newsletter from '@/components/levels/Level1';
+import Level2FeatureSection from '@/components/levels/Level2';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/Button';
-import { pieces } from '@/types';
+import { tutorialPieces, level1Pieces, level2Pieces } from '@/types';
+import useGameStore from '@/store/gameStore';
 
 type TutorialStep = 'welcome' | 'drag' | 'spacebar' | 'complete' | 'finished';
 
 export default function HomePage() {
-  // 1) Local state
+  const {
+    currentLevel,
+    timeElapsed,
+    isGameStarted,
+    isBroken,
+    snappedPieces,
+    totalPieces,
+    isLevelComplete,
+    startGame,
+    breakPieces,
+    snapPiece,
+    setLevel,
+    setTotalPieces,
+    resetLevel,
+    resetTimer
+  } = useGameStore();
+
+  // Tutorial-specific state (only for level 0)
   const [positions, setPositions] = useState<
     Record<string, { x: number; y: number; angle: number }>
   >({});
-  const [broken, setBroken] = useState(false);
-  const [isGameStarted, setIsGameStarted] = useState(false);
-  const [timeElapsed, setTimeElapsed] = useState(0);
-  const [snappedPieces, setSnappedPieces] = useState<Set<string>>(new Set());
   const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
   const [hasStartedDrag, setHasStartedDrag] = useState(false);
   const [hasUsedSpacebar, setHasUsedSpacebar] = useState(false);
 
-  // Timer
-  useEffect(() => {
-    if (!isGameStarted) return;
-    
-    const timer = setInterval(() => {
-      setTimeElapsed(prev => prev + 50);
-    }, 50);
-    
-    return () => clearInterval(timer);
-  }, [isGameStarted]);
+  // Get current level pieces
+  const getCurrentPieces = () => {
+    switch (currentLevel) {
+      case 0: return tutorialPieces;
+      case 1: return level1Pieces;
+      case 2: return level2Pieces;
+      default: return tutorialPieces;
+    }
+  };
 
-  // Auto-break after 1.5 seconds when game starts
+  const currentPieces = getCurrentPieces();
+
+  // Set total pieces when level changes
   useEffect(() => {
-    if (isGameStarted && !broken && tutorialStep === 'drag') {
+    setTotalPieces(currentPieces.length);
+  }, [currentLevel, setTotalPieces, currentPieces.length]);
+
+  // Auto-break after 1.5 seconds when game starts (tutorial only)
+  useEffect(() => {
+    if (currentLevel === 0 && isGameStarted && !isBroken && tutorialStep === 'drag') {
       const timer = setTimeout(() => {
-        setBroken(true);
+        breakPieces();
       }, 1500);
       
       return () => clearTimeout(timer);
     }
-  }, [isGameStarted, broken, tutorialStep]);
+  }, [currentLevel, isGameStarted, isBroken, tutorialStep, breakPieces]);
 
-  // Check for level completion - proper React pattern
+  // Auto-break for regular levels after 2 seconds
   useEffect(() => {
-    console.log('🔍 Completion check:', {
-      snappedPiecesSize: snappedPieces.size,
-      piecesLength: pieces.length,
-      hasUsedSpacebar,
-      tutorialStep,
-      snappedPiecesArray: Array.from(snappedPieces)
-    });
-    
-    if (snappedPieces.size === pieces.length && hasUsedSpacebar) {
-      console.log('✅ Tutorial complete! Setting to finished');
+    if (currentLevel > 0 && isGameStarted && !isBroken) {
+      const timer = setTimeout(() => {
+        breakPieces();
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentLevel, isGameStarted, isBroken, breakPieces]);
+
+  // Tutorial completion check
+  useEffect(() => {
+    if (currentLevel === 0 && snappedPieces.size === currentPieces.length && hasUsedSpacebar) {
       setTutorialStep('finished');
     }
-  }, [snappedPieces, hasUsedSpacebar]);
+  }, [currentLevel, snappedPieces, hasUsedSpacebar, currentPieces.length]);
 
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -70,60 +94,56 @@ export default function HomePage() {
   };
 
   const handlePieceSnapped = (pieceId: string) => {
-    console.log('🎯 Piece snapped (auto):', pieceId);
-    setSnappedPieces(prev => {
-      const newSet = new Set([...prev, pieceId]);
-      console.log('📦 Updated snapped pieces (auto):', Array.from(newSet));
-      return newSet;
-    });
+    snapPiece(pieceId);
   };
 
   const handleStartDrag = (pieceId: string) => {
-    console.log('🖱️ Started dragging:', pieceId);
-    if (!hasStartedDrag && tutorialStep === 'drag') {
-      console.log('📚 Moving to spacebar step');
+    if (currentLevel === 0 && !hasStartedDrag && tutorialStep === 'drag') {
       setHasStartedDrag(true);
       setTutorialStep('spacebar');
     }
   };
 
   const handleSpacebarSnap = (pieceId: string) => {
-    console.log('⌨️ Spacebar snap:', pieceId);
-    
-    if (!hasUsedSpacebar && tutorialStep === 'spacebar') {
-      console.log('🎉 First spacebar use! Moving to complete step');
-      setHasUsedSpacebar(true);
-      setTutorialStep('complete');
+    if (currentLevel === 0) {
+      if (!hasUsedSpacebar && tutorialStep === 'spacebar') {
+        setHasUsedSpacebar(true);
+        setTutorialStep('complete');
+      }
     }
-    
-    setSnappedPieces(prev => {
-      const newSet = new Set([...prev, pieceId]);
-      console.log('📦 Updated snapped pieces (spacebar):', Array.from(newSet));
-      return newSet;
-    });
+    snapPiece(pieceId);
   };
 
   const startTutorial = () => {
-    setIsGameStarted(true);
-    setTutorialStep('drag');
+    startGame();
+    if (currentLevel === 0) {
+      setTutorialStep('drag');
+    }
   };
 
   const skipTutorial = () => {
-    setTutorialStep('finished');
+    if (currentLevel === 0) {
+      setTutorialStep('finished');
+    }
   };
 
   const nextLevel = () => {
-    // For now, just reset the tutorial
-    setIsGameStarted(false);
-    setBroken(false);
-    setSnappedPieces(new Set());
-    setTutorialStep('welcome');
-    setHasStartedDrag(false);
-    setHasUsedSpacebar(false);
-    setTimeElapsed(0);
+    if (currentLevel === 0) {
+      // Move from tutorial to Level 1
+      setLevel(1);
+      setTutorialStep('welcome');
+      setHasStartedDrag(false);
+      setHasUsedSpacebar(false);
+    } else if (currentLevel === 1) {
+      // Move from Level 1 to Level 2
+      setLevel(2);
+    } else {
+      // For now, just reset current level
+      resetLevel();
+    }
   };
 
-  const piecesLeft = pieces.length - snappedPieces.size;
+  const piecesLeft = totalPieces - snappedPieces.size;
 
   // Show instructions modal if game hasn't started
   if (!isGameStarted) {
@@ -132,39 +152,58 @@ export default function HomePage() {
         <InstructionsModal onStart={startTutorial} />
         {/* Preview of the level in the background */}
         <div className="opacity-30">
-          <div className="relative w-screen h-screen bg-synth-950 cyber-grid scanlines overflow-hidden">
-            {/* 2) Render header */}
-            <div
-              id="header"
-              className="absolute text-neon-cyan font-bold text-4xl flex items-center justify-center"
-              style={{
-                width: pieces[0].w,
-                height: pieces[0].h,
-                transform: `translate(${pieces[0].x}px, ${pieces[0].y}px)`,
-                transformOrigin: 'center',
-              }}
-            >
-              Build Something Vibeable
+          {currentLevel === 0 ? (
+            <div className="relative w-screen h-screen bg-synth-950 cyber-grid scanlines overflow-hidden">
+              <div
+                id="header"
+                className="absolute text-neon-cyan font-bold text-4xl flex items-center justify-center"
+                style={{
+                  width: currentPieces[0].w,
+                  height: currentPieces[0].h,
+                  transform: `translate(${currentPieces[0].x}px, ${currentPieces[0].y}px)`,
+                  transformOrigin: 'center',
+                }}
+              >
+                Build Something Vibeable
+              </div>
+              <button
+                id="button"
+                className="absolute bg-neon-pink text-white px-4 py-2 rounded border-2 border-neon-cyan font-bold"
+                style={{
+                  width: currentPieces[1].w,
+                  height: currentPieces[1].h,
+                  transform: `translate(${currentPieces[1].x}px, ${currentPieces[1].y}px)`,
+                  transformOrigin: 'center',
+                }}
+              >
+                Click Me
+              </button>
             </div>
-
-            {/* 3) Render button */}
-            <button
-              id="button"
-              className="absolute bg-neon-pink text-white px-4 py-2 rounded border-2 border-neon-cyan font-bold"
-              style={{
-                width: pieces[1].w,
-                height: pieces[1].h,
-                transform: `translate(${pieces[1].x}px, ${pieces[1].y}px)`,
-                transformOrigin: 'center',
-              }}
-            >
-              Click Me
-            </button>
-          </div>
+          ) : (
+            <Level1Newsletter />
+          )}
         </div>
       </div>
     );
   }
+
+  const getLevelTitle = () => {
+    switch (currentLevel) {
+      case 0: return 'Tutorial Level';
+      case 1: return 'Level 1';
+      case 2: return 'Level 2';
+      default: return `Level ${currentLevel}`;
+    }
+  };
+
+  const getLevelDescription = () => {
+    switch (currentLevel) {
+      case 0: return 'Build Something Vibeable';
+      case 1: return 'Newsletter Card';
+      case 2: return 'Feature Section';
+      default: return 'Challenge';
+    }
+  };
 
   return (
     <div className="relative w-screen h-screen bg-synth-950 cyber-grid scanlines overflow-hidden">
@@ -179,10 +218,10 @@ export default function HomePage() {
           <CardHeader className="p-4">
             <div className="text-right">
               <CardTitle className="text-sm font-bold gradient-text-secondary mb-1">
-                Tutorial Level
+                {getLevelTitle()}
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground font-medium mb-3">
-                Build Something Vibeable
+                {getLevelDescription()}
               </CardDescription>
             </div>
             
@@ -205,80 +244,93 @@ export default function HomePage() {
         </Card>
       </motion.div>
 
-      {/* Tutorial Popups */}
-      <AnimatePresence>
-        {tutorialStep === 'drag' && (
-          <TutorialPopup
-            title="🎯 Step 1: Drag & Drop"
-            description="Watch the components break apart, then drag any piece around the screen to move it!"
-            position="top-center"
-            onSkip={skipTutorial}
-            showButtons={false}
-          />
-        )}
-        
-        {tutorialStep === 'spacebar' && (
-          <TutorialPopup
-            title="📌 Step 2: Pin in Place"
-            description="While dragging a piece, press SPACEBAR to pin it in that exact location!"
-            position="top-center"
-            onSkip={skipTutorial}
-            showButtons={false}
-          />
-        )}
-        
-        {tutorialStep === 'complete' && (
-          <TutorialPopup
-            title="🎉 Almost Done!"
-            description="Great! Now pin both pieces wherever you want them. You can drag them close to their original spots to snap them back automatically."
-            position="top-center"
-            onSkip={skipTutorial}
-            showButtons={false}
-          />
-        )}
-      </AnimatePresence>
+      {/* Tutorial Popups (only for level 0) */}
+      {currentLevel === 0 && (
+        <AnimatePresence>
+          {tutorialStep === 'drag' && (
+            <TutorialPopup
+              title="🎯 Step 1: Drag & Drop"
+              description="Watch the components break apart, then drag any piece around the screen to move it!"
+              position="top-center"
+              onSkip={skipTutorial}
+              showButtons={false}
+            />
+          )}
+          
+          {tutorialStep === 'spacebar' && (
+            <TutorialPopup
+              title="📌 Step 2: Pin in Place"
+              description="While dragging a piece, press SPACEBAR to pin it in that exact location!"
+              position="top-center"
+              onSkip={skipTutorial}
+              showButtons={false}
+            />
+          )}
+          
+          {tutorialStep === 'complete' && (
+            <TutorialPopup
+              title="🎉 Almost Done!"
+              description="Great! Now pin both pieces wherever you want them. You can drag them close to their original spots to snap them back automatically."
+              position="top-center"
+              onSkip={skipTutorial}
+              showButtons={false}
+            />
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Completion Modal */}
-      {tutorialStep === 'finished' && (
+      {(isLevelComplete || (currentLevel === 0 && tutorialStep === 'finished')) && (
         <CompletionModal onNextLevel={nextLevel} />
       )}
 
-      {/* 2) Render header */}
-      <div
-        id="header"
-        className="absolute text-neon-cyan font-bold text-4xl flex items-center justify-center"
-        style={{
-          width: pieces[0].w,
-          height: pieces[0].h,
-          transform: `translate(${(positions.header?.x ?? pieces[0].x + pieces[0].w/2) - pieces[0].w/2}px, ${
-            (positions.header?.y ?? pieces[0].y + pieces[0].h/2) - pieces[0].h/2
-          }px) rotate(${positions.header?.angle ?? 0}rad)`,
-          transformOrigin: 'center',
-        }}
-      >
-        Build Something Vibeable
-      </div>
+      {/* Render current level */}
+      {currentLevel === 0 ? (
+        <>
+          {/* Tutorial elements */}
+          <div
+            id="header"
+            className="absolute text-neon-cyan font-bold text-4xl flex items-center justify-center"
+            style={{
+              width: currentPieces[0].w,
+              height: currentPieces[0].h,
+              transform: `translate(${(positions.header?.x ?? currentPieces[0].x + currentPieces[0].w/2) - currentPieces[0].w/2}px, ${
+                (positions.header?.y ?? currentPieces[0].y + currentPieces[0].h/2) - currentPieces[0].h/2
+              }px) rotate(${positions.header?.angle ?? 0}rad)`,
+              transformOrigin: 'center',
+            }}
+          >
+            Build Something Vibeable
+          </div>
+          <button
+            id="button"
+            className="absolute bg-neon-pink text-white px-4 py-2 rounded border-2 border-neon-cyan font-bold"
+            style={{
+              width: currentPieces[1].w,
+              height: currentPieces[1].h,
+              transform: `translate(${(positions.button?.x ?? currentPieces[1].x + currentPieces[1].w/2) - currentPieces[1].w/2}px, ${
+                (positions.button?.y ?? currentPieces[1].y + currentPieces[1].h/2) - currentPieces[1].h/2
+              }px) rotate(${positions.button?.angle ?? 0}rad)`,
+              transformOrigin: 'center',
+            }}
+          >
+            Click Me
+          </button>
+        </>
+      ) : currentLevel === 1 ? (
+        <Level1Newsletter positions={positions} />
+      ) : currentLevel === 2 ? (
+        <Level2FeatureSection positions={positions} />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-neon-cyan text-2xl">Level {currentLevel} - Coming Soon!</div>
+        </div>
+      )}
 
-      {/* 3) Render button */}
-      <button
-        id="button"
-        className="absolute bg-neon-pink text-white px-4 py-2 rounded border-2 border-neon-cyan font-bold"
-        style={{
-          width: pieces[1].w,
-          height: pieces[1].h,
-          transform: `translate(${(positions.button?.x ?? pieces[1].x + pieces[1].w/2) - pieces[1].w/2}px, ${
-            (positions.button?.y ?? pieces[1].y + pieces[1].h/2) - pieces[1].h/2
-          }px) rotate(${positions.button?.angle ?? 0}rad)`,
-          transformOrigin: 'center',
-        }}
-      >
-        Click Me
-      </button>
-
-      {/* 4) Physics layer */}
+      {/* Physics layer */}
       <PhysicsCanvas
-        pieces={pieces}
-        breakMode={broken}
+        pieces={currentPieces}
+        breakMode={isBroken}
         onUpdate={(pos) => setPositions(pos)}
         onPieceSnapped={handlePieceSnapped}
         onStartDrag={handleStartDrag}

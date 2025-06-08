@@ -44,6 +44,13 @@ export default function PhysicsCanvas({
   }, [onPieceSnapped, onStartDrag, onSpacebarSnap]);
 
   useEffect(() => {
+    console.log('🔄 PhysicsCanvas main effect triggered - pieces changed:', pieces.map(p => p.id));
+    
+    // Clear refs on level change to prevent old data interference
+    bodiesRef.current = {};
+    constraintsRef.current = {};
+    originalPositionsRef.current = {};
+
     // 1) Setup engine & world
     const engine = Matter.Engine.create();
     engine.gravity.y = 1;
@@ -70,7 +77,7 @@ export default function PhysicsCanvas({
     mouseElement.style.width = '100vw';
     mouseElement.style.height = '100vh';
     mouseElement.style.pointerEvents = 'auto';
-    mouseElement.style.zIndex = '1001';
+    mouseElement.style.zIndex = '49'; // Lower than modal z-index (50);
     document.body.appendChild(mouseElement);
 
     const mouse = Matter.Mouse.create(mouseElement);
@@ -166,6 +173,7 @@ export default function PhysicsCanvas({
     });
 
     bodiesRef.current = newBodies;
+    console.log('✅ Physics setup complete. Bodies:', Object.keys(bodiesRef.current), 'Constraints:', Object.keys(constraintsRef.current));
 
     // 5) Listen for mouse events to handle snap-back
     const snapPieceBack = (body: Matter.Body) => {
@@ -311,11 +319,13 @@ export default function PhysicsCanvas({
     Matter.Events.on(engine, 'afterUpdate', () => {
       const pos: Record<string, { x: number; y: number; angle: number }> = {};
       for (const [id, body] of Object.entries(bodiesRef.current)) {
-        pos[id] = {
-          x: body.position.x,
-          y: body.position.y,
-          angle: body.angle,
-        };
+        if (body && body.position) { // Add defensive check
+          pos[id] = {
+            x: body.position.x,
+            y: body.position.y,
+            angle: body.angle,
+          };
+        }
       }
       onUpdate(pos);
     });
@@ -336,16 +346,25 @@ export default function PhysicsCanvas({
       }
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [pieces]); // Added pieces to dependency array
 
   // 9) Break: remove 2 pins immediately, then last pin with force for dramatic swing
   useEffect(() => {
     if (!breakMode) return;
+    
     const world = engineRef.current!.world;
     
+    // Reverse the order to break bottom pieces first
+    const entries = Object.entries(constraintsRef.current).reverse();
+    
     // For each piece, remove 2 pins immediately and the last one after a delay with force
-    Object.entries(constraintsRef.current).forEach(([pieceId, constraints], pieceIndex) => {
+    entries.forEach(([pieceId, constraints], pieceIndex) => {
       const body = bodiesRef.current[pieceId];
+      
+      // Add defensive check for body existence
+      if (!body || !constraints || constraints.length < 3) {
+        return;
+      }
       
       // Remove first 2 pins immediately to let it hang by the last pin
       setTimeout(() => {

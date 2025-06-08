@@ -19,7 +19,7 @@ interface GameState {
   // Actions
   startGame: () => void;
   breakPieces: () => void;
-  resetLevel: () => void;
+  resetLevel: (keepGameStarted?: boolean) => void;
   snapPiece: (pieceId: string) => void;
   setLevel: (level: number) => void;
   setTotalPieces: (count: number) => void;
@@ -39,7 +39,7 @@ const useGameStore = create<GameState>((set, get) => {
     isTimerRunning: false,
     
     // Game state
-    currentLevel: 1,
+    currentLevel: 0, // Start at tutorial level
     isGameStarted: false,
     isBroken: false,
     snappedPieces: new Set(),
@@ -86,10 +86,10 @@ const useGameStore = create<GameState>((set, get) => {
       set({ isBroken: true });
     },
 
-    resetLevel: () => {
+    resetLevel: (keepGameStarted?: boolean) => {
       const { resetTimer } = get();
       set({ 
-        isGameStarted: false,
+        isGameStarted: keepGameStarted || false,
         isBroken: false,
         snappedPieces: new Set(),
         totalPieces: 0,
@@ -126,9 +126,10 @@ const useGameStore = create<GameState>((set, get) => {
     },
 
     setLevel: (level: number) => {
-      const { resetLevel } = get();
+      const { resetLevel, startTimer } = get();
       set({ currentLevel: level });
-      resetLevel();
+      resetLevel(true); // Keep the game started when changing levels
+      startTimer(); // Start the timer for the new level
     },
 
     setTotalPieces: (count: number) => {
