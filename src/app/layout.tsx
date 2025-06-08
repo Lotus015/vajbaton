@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Orbitron } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const orbitron = Orbitron({
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${orbitron.variable} antialiased`}>
         {children}
+        <Analytics />
       </body>
     </html>
   );

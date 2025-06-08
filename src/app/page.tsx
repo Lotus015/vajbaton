@@ -14,7 +14,6 @@ import Level4FormModal from '@/components/levels/Level4';
 import Level5Easy from '@/components/levels/Level5';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { tutorialPieces, level1Pieces, level2Pieces, level3Pieces, level4Pieces, level5Pieces } from '@/types';
 import useGameStore from '@/store/gameStore';
 import { allLevels } from '@/types';
 
