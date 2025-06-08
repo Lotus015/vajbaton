@@ -25,10 +25,10 @@ export default function PhysicsCanvas({
   onSpacebarSnap,
 }: PhysicsCanvasProps) {
   const sceneRef = useRef<HTMLDivElement>(null);
-  const engineRef = useRef<Matter.Engine>();
+  const engineRef = useRef<Matter.Engine | null>(null);
   const bodiesRef = useRef<Record<string, Matter.Body>>({});
   const constraintsRef = useRef<Record<string, Matter.Constraint[]>>({});
-  const mouseConstraintRef = useRef<Matter.MouseConstraint>();
+  const mouseConstraintRef = useRef<Matter.MouseConstraint | null>(null);
   const originalPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
 
   // Use refs to hold the latest callbacks to avoid stale closures
@@ -242,12 +242,12 @@ export default function PhysicsCanvas({
       return false;
     };
 
-    Matter.Events.on(mouseConstraint, 'enddrag', (event) => {
+    Matter.Events.on(mouseConstraint, 'enddrag', (event: any) => {
       snapPieceBack(event.body);
     });
 
     // Add startdrag event listener for tutorial
-    Matter.Events.on(mouseConstraint, 'startdrag', (event) => {
+    Matter.Events.on(mouseConstraint, 'startdrag', (event: any) => {
       const body = event.body;
       if (body && body.label.startsWith('box-') && onStartDragRef.current) {
         const pieceId = body.label.replace('box-', '');
@@ -352,7 +352,8 @@ export default function PhysicsCanvas({
   useEffect(() => {
     if (!breakMode) return;
     
-    const world = engineRef.current!.world;
+    const world = engineRef.current?.world;
+    if (!world) return;
     
     // Reverse the order to break bottom pieces first
     const entries = Object.entries(constraintsRef.current).reverse();
