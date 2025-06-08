@@ -1,9 +1,1 @@
-{
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "destination": "https://vajbaton-git-main-miodragtodorovic-3274s-projects.vercel.app/$1",
-      "permanent": true
-    }
-  ]
-}
+{}
