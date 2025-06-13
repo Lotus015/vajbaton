@@ -7,6 +7,7 @@ import InstructionsModal from '@/components/InstructionsModal';
 import TutorialPopup from '@/components/TutorialPopup';
 import CompletionModal from '@/components/CompletionModal';
 import LevelSelectorModal from '@/components/LevelSelectorModal';
+import TwitterCTA from '@/components/TwitterCTA';
 import Level1Newsletter from '@/components/levels/Level1';
 import Level2FeatureSection from '@/components/levels/Level2';
 import Level3NavbarHeroFooter from '@/components/levels/Level3';
@@ -288,6 +289,9 @@ export default function HomePage() {
           </CardHeader>
         </Card>
       </motion.div>
+
+      {/* Twitter CTA */}
+      <TwitterCTA />
 
       {/* Tutorial Popups (only for level 0) */}
       {currentLevel === 0 && (

@@ -206,6 +206,53 @@ body {
   animation: pulse-glow 3s ease-in-out infinite;
 }
 
+/* Sequential border glow animation */
+@keyframes border-glow {
+  0%, 15% {
+    border-color: rgba(255, 0, 128, 0.8);
+    box-shadow: 0 0 15px rgba(255, 0, 128, 0.6), 0 0 30px rgba(255, 0, 128, 0.3);
+  }
+  20%, 30% {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 5px rgba(0, 212, 255, 0.2);
+  }
+  35%, 50% {
+    border-color: rgba(0, 102, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 102, 255, 0.6), 0 0 30px rgba(0, 102, 255, 0.3);
+  }
+  55%, 65% {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 5px rgba(0, 212, 255, 0.2);
+  }
+  70%, 85% {
+    border-color: rgba(0, 255, 136, 0.8);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.6), 0 0 30px rgba(0, 255, 136, 0.3);
+  }
+  90%, 100% {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 5px rgba(0, 212, 255, 0.2);
+  }
+}
+
+.animate-border-glow {
+  animation: border-glow 4s ease-in-out infinite;
+  border: 2px solid rgba(0, 212, 255, 0.3);
+}
+
+/* Slow spin animation for neon ring */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
 /* Glass morphism effect */
 .glass {
   background: rgba(26, 26, 46, 0.4);
